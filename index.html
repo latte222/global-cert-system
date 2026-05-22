@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Global Certification System</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  html,body{margin:0;padding:0;height:100%;background:#eaf3fb;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  *{box-sizing:border-box}
+  button{font-family:inherit}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="trial/db.jsx"></script>
+<script type="text/babel" src="trial/ui.jsx"></script>
+<script type="text/babel" src="trial/screens-shell.jsx"></script>
+<script type="text/babel" src="trial/screens-dash.jsx"></script>
+<script type="text/babel" src="trial/screens-products.jsx"></script>
+<script type="text/babel" src="trial/screens-cases.jsx"></script>
+<script type="text/babel" src="trial/screens-gantt.jsx"></script>
+<script type="text/babel" src="trial/screens-users.jsx"></script>
+<script type="text/babel" src="trial/tweaks-panel.jsx"></script>
+<script type="text/babel" src="trial/tweaks.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState } = React;
+const { useDB, useViewport } = window.UI;
+const { Login, Shell, Dashboard, Products, Cases, Gantt, UserManagement, MobileToday, MobileCases, TrialTweaks } = window.Screens;
+
+function App() {
+  const s = useDB();
+  const { isMobile } = useViewport();
+  const [route, setRoute] = useState('dash');
+  const [focusCase, setFocusCase] = useState(null);
+  React.useEffect(() => { if (route !== 'cases') setFocusCase(null); }, [route]);
+
+  // Register tweaks panel availability
+  React.useEffect(() => {
+    const handleMessage = (e) => {
+      if (e.data?.type === '__activate_edit_mode') {
+        // Tweaks panel activation handled by TweaksPanel component
+      } else if (e.data?.type === '__deactivate_edit_mode') {
+        // Tweaks panel deactivation handled by TweaksPanel component
+      }
+    };
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
+
+  if (!s.session) return <Login/>;
+
+  let body;
+  if (isMobile) {
+    if (route === 'dash')          body = <MobileToday   setRoute={setRoute} setFocusCase={setFocusCase}/>;
+    else if (route === 'products') body = <Products      setRoute={setRoute} setFocusCase={setFocusCase}/>;
+    else if (route === 'cases')    body = focusCase
+      ? <Cases focusCase={focusCase} setFocusCase={setFocusCase}/>
+      : <MobileCases setFocusCase={setFocusCase}/>;
+    else if (route === 'gantt')    body = <Gantt/>;
+    else if (route === 'users')    body = <UserManagement/>;
+  } else {
+    if (route === 'dash')          body = <Dashboard setRoute={setRoute} setFocusCase={setFocusCase}/>;
+    else if (route === 'products') body = <Products  setRoute={setRoute} setFocusCase={setFocusCase}/>;
+    else if (route === 'cases')    body = <Cases focusCase={focusCase} setFocusCase={setFocusCase}/>;
+    else if (route === 'gantt')    body = <Gantt/>;
+    else if (route === 'users')    body = <UserManagement/>;
+  }
+  
+  return (
+    <>
+      <Shell route={route} setRoute={setRoute}>{body}</Shell>
+      {/* <TrialTweaks/> */}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
